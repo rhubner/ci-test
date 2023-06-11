@@ -26,8 +26,12 @@ import java.util.UUID;
 
 public class SearchTest {
 
-    public static final Path DIR = Paths.get("/Users/rhubner/workspace/search-test/index-dir");
+    public static final Path DIR = Paths.get("./index-dir");
 
+    /**
+     * Basic configuration, Directory where index is stored. And primary analyser.
+     * @throws IOException
+     */
     public void index() throws IOException {
 
         FileUtils.deleteDirectory(DIR.toFile());
@@ -41,12 +45,12 @@ public class SearchTest {
         analyserTest(new CzechAnalyzer());
 
 
-        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        IndexWriterConfig config = new IndexWriterConfig(analyzer); //Index configuration and also default analyzer!!!!
 
 
 
         try(IndexWriter writer = new IndexWriter(dir, config)) {
-            writeData(writer);
+            writeData(writer);  //Check this method
         }
 
         try(IndexReader r = DirectoryReader.open(dir)) {
@@ -105,10 +109,19 @@ public class SearchTest {
 
     }
 
+    /**
+     * Create document with few field, "_id", "password","term-tok", "value.raw", "fieldWithCustomAnalyser".
+     *
+     * fieldWithCustomAnalyser - Is crated as "generic" field. And utilise tokenStream property from Filed.
+     * This allows to set up custom tokenized data.
+     *
+     * @param writer
+     * @throws IOException
+     */
     public void writeData(IndexWriter writer) throws IOException {
         String docId = UUID.randomUUID().toString();
         StringField id = new StringField("_id", docId, Field.Store.YES);
-        TextField hesloTok = new TextField("heslo-tok", "Tajne heslo keter je tokenizovano", Field.Store.YES);
+        TextField hesloTok = new TextField("term-tok", "Tajne heslo keter je tokenizovano", Field.Store.YES);
 
         FieldType fieldType = new FieldType();
         fieldType.setStored(true);
@@ -119,16 +132,18 @@ public class SearchTest {
         Analyzer analyzer = new EnglishAnalyzer(EnglishAnalyzer.getDefaultStopSet());
 
 
-        Field longText = new Field("fieldWithCustomAnalyser", LONG_TEXT,  fieldType );
-        longText.setTokenStream(analyzer.tokenStream(longText.name(), LONG_TEXT));
+        Field longText = new Field("fieldWithCustomAnalyser", LONG_TEXT,  fieldType ); //Create field, generic as possible, with original long text and additional field type specifications.
 
+        longText.setTokenStream(analyzer.tokenStream(longText.name(), LONG_TEXT)); //Setup custom tokenized data. This is the trick. It will not use the default one from IndexWriter.
+        // We can use any analyzer which we want. I think this may even allow us to index custom types, like IPv6 IP address, or Post code. For each we can use different analyzer
+        // Don't know what will happen if fields with same name are analyzed with different analyzer. -> I think Search will be broken.
+        // from different analyzers.
 
         IntPoint intPoint = new IntPoint("value.raw", 100);
 
-
         Document doc = new Document();
         doc.add(id);
-        doc.add(new StringField("heslo", "Tajne heslo", Field.Store.YES));
+        doc.add(new StringField("password", "Tajne heslo", Field.Store.YES));
         doc.add(hesloTok);
         doc.add(intPoint);
         doc.add(longText);
