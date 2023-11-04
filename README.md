@@ -1,5 +1,7 @@
 # Lucene search test
 
+change1
+
 This code try to use different
 [`Analyzer`](https://lucene.apache.org/core/8_11_1/core/org/apache/lucene/analysis/Analyzer.html)
 for text fields which will override 
