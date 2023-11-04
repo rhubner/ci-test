@@ -1,5 +1,6 @@
 # Lucene search test
 
+change2 on existing branch.
 change1
 
 This code try to use different
